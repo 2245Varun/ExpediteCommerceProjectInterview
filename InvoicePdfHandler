@@ -1,0 +1,69 @@
+public class InvoicePdfHandler {
+    public Order order1 { get; set; }
+    public List<OrderItem> OrderLineItems { get; set; }
+    
+    public static PageReference createInvoice(Id recordId) {
+        
+        List<OrderItem> orderLineItems = [SELECT Id, Quantity, UnitPrice, TotalPrice, Product2.Name, Product2.Description
+                                          FROM OrderItem 
+                                          WHERE OrderId = :recordId];
+        
+        // Generate PDF
+        PageReference pdfPage = Page.InvoicePdfForOrder;
+        pdfPage.getParameters().put('orderId', recordId);
+        pdfPage.getParameters().put('orderLineItems', JSON.serialize(orderLineItems));
+        return pdfPage;
+    }
+    
+    @AuraEnabled(Cacheable=true)
+    public static list<CronTrigger> getScheduleStatus(){
+        List<CronTrigger> cron = new List<CronTrigger>();
+        try {
+            cron = [SELECT Id, CronJobDetail.Name, State, NextFireTime, PreviousFireTime
+                       FROM CronTrigger 
+                       WHERE CronJobDetail.JobType = '7'];
+    
+            if(cron.isEmpty()) {
+                cron = new List<CronTrigger>(); // Return an empty list if no records found
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException('An error occurred while fetching schedule status: ' + e.getMessage());
+        }
+        return cron;
+    }
+
+    @AuraEnabled
+    public static list<CronTrigger> scheduleJob() {
+        List<CronTrigger> cronTriggers = new List<CronTrigger>();
+    try {
+        // Schedule the job
+        String jobId = System.schedule('My Scheduled Job', '0 0 22 * * ?', new ScheduleInvoicePdfBatch());
+        if(jobId != null) {
+            cronTriggers = getScheduleStatus();
+        }
+    }
+    catch(Exception e){
+        throw new AuraHandledException(e.getMessage());
+
+    }
+    return cronTriggers;
+
+}
+
+@AuraEnabled
+    public static void stopJob() {
+    try {
+        List<CronTrigger> activeJobs = [SELECT Id FROM CronTrigger WHERE State = 'WAITING' OR State = 'ACQUIRED' OR State = 'EXECUTING'];
+
+        // Abort active jobs
+        for (CronTrigger job : activeJobs) {
+            System.abortJob(job.Id);
+        }
+    }
+    catch(Exception e){
+        throw new AuraHandledException(e.getMessage());
+
+    }
+
+}
+}
