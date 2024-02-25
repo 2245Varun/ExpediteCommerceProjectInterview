@@ -1,0 +1,31 @@
+public class InvoiceDataHandler {
+    public List<OrderItem> orderLineItems { get; set; }
+    public Invoice__c Invoice {get;set;}
+    public Order order {get;set;}
+
+    public InvoiceDataHandler() {
+        try{
+        String orderLineItemsJson = ApexPages.currentPage().getParameters().get('orderLineItems');
+        String OrderId = ApexPages.currentPage().getParameters().get('orderId');
+        System.debug('OrderId=> '+OrderId);
+        
+        order = [Select Id,name,OrderNumber,Type,ActivatedDate,ShippingAddress,ShippingCity,ShippingStreet,ShippingCountry,
+                  BillingStreet,BillingCity,BillingCountry,ShippingState,BillingAddress,TotalAmount from order where Id=:OrderId];
+        System.debug('Order=> '+order);
+        Invoice = [Select Id,Invoice_Date__c,Invoice_No__c from Invoice__c where Order__c=:OrderId];
+        SYstem.debug('Invoice=> '+Invoice);
+        if(orderLineItemsJson!=null)
+        {
+         orderLineItems = (List<OrderItem>) JSON.deserialize(orderLineItemsJson, List<OrderItem>.class);
+
+        }
+        else{
+            orderLineItems = new list<OrderItem>();
+        }
+        }catch(Exception e)
+        {
+            System.debug('Line=> '+e.getLineNumber()+' Exception=> '+e.getMessage());
+        }
+        
+    }
+}
