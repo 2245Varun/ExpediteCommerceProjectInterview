@@ -1,0 +1,40 @@
+global class InvoicePdfBatch implements Database.Batchable<sobject>{
+    global Database.QueryLocator start (Database.BatchableContext BC){
+        return Database.getQueryLocator([Select Id,name,OrderNumber from order where CreatedDate = TODAY AND Status = 'Activated']);
+    }
+    
+    global void execute (Database.BatchableContext BC,List<Order>OrderList){
+        System.debug('BatchCalled=> '+OrderList);
+        List<Messaging.EmailFileAttachment> attachments = new List<Messaging.EmailFileAttachment>();
+        try {
+            for (Order ord : OrderList) {
+                PageReference pdfPage = InvoicePdfHandler.createInvoice(ord.Id);
+                
+                Blob pdfBlob = pdfPage.getContentAsPDF();
+                
+                Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
+                attachment.setFileName('Invoice_' + ord.OrderNumber + '.pdf');
+                attachment.setBody(pdfBlob);
+                attachments.add(attachment);
+            }
+            
+            if (!attachments.isEmpty()) {
+                SYstem.debug('InBAtch24=> ');
+                Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+                email.setSubject('Daily Invoices');
+                email.setToAddresses(new List<String>{'sahuvarun69@gmail.com'});
+                email.setPlainTextBody('Please find attached invoices for today.');
+                email.setFileAttachments(attachments);
+                Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email});
+                SYstem.debug('InBatch31=>');
+            }
+        } catch (Exception e) {
+            System.debug('Line=> '+e.getLineNumber()+' Exception=> '+e.getMessage());
+        }
+        
+    }
+
+    global void finish (Database.BatchableContext Bc){
+        
+    }
+}
