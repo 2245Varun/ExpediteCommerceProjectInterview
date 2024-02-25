@@ -1,0 +1,95 @@
+<apex:page renderAs="pdf" controller="InvoiceDataHandler">
+
+  <apex:form >
+    <html>
+        <head>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                }
+                .container {
+                    width: 100%;
+                    max-width: 800px;
+                    margin: 0 auto;
+                }
+                .column {
+                    width: 50%;
+                    text-align: center;
+                }
+                h2 {
+                    text-align: center;
+                }
+                .center-align {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .styled-table {
+                    border-collapse: collapse;
+                    margin: 25px 0;
+                    font-size: 0.9em;
+                    font-family: sans-serif;
+                    min-width: 400px;
+                    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+                }
+
+                .logo {
+                    float: left;
+                    margin-right: 20px; /* Adjust margin as needed */
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">
+                    <!-- Replace 'logo.png' with the path to your logo image -->
+                    <img src="{!$Resource.ExpediteLogo}" alt="Logo" width="120" height="120"></img>
+                </div>
+                <div class="column">
+                        
+        <div class="row">       
+                <tr><td width="650px" ><h2 style= "text-align: center"><strong><apex:outputText value="Tax Invoice"/></strong></h2></td> </tr>                			         
+        <div> <br/>
+        <div class="column" align="left" width="500px">
+    <tr><td width="500px"><apex:outputLabel value="Billing Street : "/><apex:outputText value="{!order.BillingStreet}"></apex:outputText></td>                   <td width="300px"><apex:outputLabel value="Shipping Address : "/> <apex:outputText value="{!Order.ShippingStreet} "/></td> </tr>
+
+    <tr><td width="500px"><apex:outputLabel value="Order Number : "/><apex:outputText value="{!order.OrderNumber}"></apex:outputText></td>                   <td width="300px"><apex:outputLabel value="Invoice Number : "/> <apex:outputText value="{!Invoice.Invoice_No__c} "/></td> </tr>
+    <tr><td width="500px"><apex:outputLabel value="Order Date : "/><apex:outputText value="{!order.ActivatedDate}"></apex:outputText></td>                   <td width="300px"><apex:outputLabel value="Invoice Date : "/> <apex:outputText value="{!Invoice.Invoice_Date__c} "/></td> </tr>
+     
+    <br/><br/><br/>
+    <table border="1" border-collapse="collapse" cellpadding="6" width="100%" margin="25px">
+        <tr>
+            <th>Product Name</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>Net Amount</th>
+
+        </tr>
+        
+        <apex:repeat value="{!orderLineItems}" var="item"> 
+           <tr>
+                    <td>{!item.Product2.Name}</td>
+                    <td>{!item.UnitPrice}</td>     
+                    <td>{!item.Quantity}</td>
+                    <td>{!item.TotalPrice}</td>
+                </tr>
+            </apex:repeat>
+            <tr class="footer-row">
+                <td colspan="3">Total Invoice Amount</td>
+                <td>{!order.TotalAmount}</td>
+            </tr>
+    </table>  
+    <br/>
+
+<br/><br/>    
+            </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </body>
+    </html>
+    <script>
+    </script>
+    </apex:form>
+</apex:page>
