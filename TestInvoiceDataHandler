@@ -1,0 +1,140 @@
+@isTest
+private class TestInvoiceDataHandler {
+    @isTest
+    static void testConstructorWithOrderLineItems() {
+        // Create test data
+        Account acc = new Account(Name = 'TestInvoice');
+        insert acc;
+        
+        Contract newContract = new Contract(
+            AccountId = acc.Id, 
+            StartDate = Date.today(),
+            Status = 'Draft', 
+            ContractTerm = 12
+        );
+        insert newContract;
+        
+         newContract.Status = 'Activated';
+        update newContract;
+        
+        Product2 productItem = new Product2(name = 'Product test');
+        insert productItem;
+        
+        PricebookEntry standardEntryForProduct2 = new PricebookEntry(
+            Pricebook2Id = Test.getStandardPricebookId(),
+            Product2Id = productItem.Id,
+            UnitPrice = 200.00, // Adjust the unit price as needed
+            IsActive = true
+        );
+        insert standardEntryForProduct2;
+        
+        Pricebook2 standardPricebook = new Pricebook2(
+            Name = 'Standard Price Book',
+            IsActive = true
+        );
+        insert standardPricebook;
+        
+        PricebookEntry entryInStandardBook = new PricebookEntry(
+            Pricebook2Id = standardPricebook.Id,
+            Product2Id = productItem.Id,
+            UnitPrice = 1000.00
+        );
+        insert entryInStandardBook;
+        
+        Order testOrder = new Order(
+                Name = 'Test Order',
+                Status = 'Draft',
+                EffectiveDate = Date.today(),
+                AccountId = acc.Id,
+                ContractId = newContract.Id,
+                Pricebook2Id = standardPricebook.Id );
+                insert testOrder;
+        
+        List<OrderItem> testOrderItems = new List<OrderItem>();
+            for (Integer i = 0; i < 2; i++) {
+                testOrderItems.add(new OrderItem(
+                    OrderId = testOrder.Id,
+                    Product2Id = productItem.Id,
+                    UnitPrice = 1000.00,
+                    Quantity = 1,
+                    PricebookEntryId = entryInStandardBook.Id
+                ));
+        }
+        insert testOrderItems;
+        
+        // Update Order status to 'Activated'
+        
+            testOrder.Status = 'Activated';
+        
+        update testOrder;
+        String orderLineItemsJson = JSON.serialize(testOrderItems);
+        
+        Test.startTest();
+        // Set up page parameters for test
+        ApexPages.currentPage().getParameters().put('orderLineItems', orderLineItemsJson);
+        ApexPages.currentPage().getParameters().put('orderId', testOrder.Id);
+        
+        // Call the constructor
+        InvoiceDataHandler handler = new InvoiceDataHandler();
+        Test.stopTest();
+        
+        // Verify the result
+        System.assertNotEquals(null, handler.order, 'Order should not be null');
+        System.assertNotEquals(null, handler.Invoice, 'Invoice should not be null');
+        System.assertNotEquals(null, handler.orderLineItems, 'Order Line Items should not be null');
+        System.assertEquals(testOrder.Id, handler.order.Id, 'Order Id should match');
+        System.assertEquals(testOrderItems.size(), handler.orderLineItems.size(), 'Order Line Items count should match');
+    }
+    
+    @isTest
+    static void testConstructorWithoutOrderLineItems() {
+        
+          Account acc = new Account(Name = 'TestInvoice');
+        insert acc;
+        
+        Contract newContract = new Contract(
+            AccountId = acc.Id, 
+            StartDate = Date.today(),
+            Status = 'Draft', 
+            ContractTerm = 12
+        );
+        insert newContract;
+        
+         newContract.Status = 'Activated';
+        update newContract;
+        
+        // Create test data
+         Pricebook2 standardPricebook = new Pricebook2(
+            Name = 'Standard Price Book',
+            IsActive = true
+        );
+        insert standardPricebook;
+        
+        
+        Order testOrder = new Order(
+                Name = 'Test Order',
+                Status = 'Draft',
+                EffectiveDate = Date.today(),
+                AccountId = acc.Id,
+                ContractId = newContract.Id,
+                Pricebook2Id = standardPricebook.Id );
+        insert testOrder;
+        
+        Test.startTest();
+        // Set up page parameters for test
+        ApexPages.currentPage().getParameters().put('orderId', testOrder.Id);
+        
+        // Call the constructor
+        InvoiceDataHandler handler = new InvoiceDataHandler();
+        Test.stopTest();
+        
+        // Verify the result
+        System.assertNotEquals(null, handler.order, 'Order should not be null');
+        System.assertNotEquals(null, handler.Invoice, 'Invoice should not be null');
+        System.assertNotEquals(null, handler.orderLineItems, 'Order Line Items should not be null');
+        System.assertEquals(testOrder.Id, handler.order.Id, 'Order Id should match');
+        System.assertEquals(0, handler.orderLineItems.size(), 'Order Line Items count should be 0');
+    }
+    
+    // Add more test methods to cover exceptional cases or additional functionality as needed
+}
