@@ -1,0 +1,6 @@
+global class ScheduleInvoicePdfBatch implements Schedulable {
+    global void execute(SchedulableContext sc) {
+        InvoicePdfBatch batch = new InvoicePdfBatch();
+        Database.executeBatch(batch);
+    }
+}
