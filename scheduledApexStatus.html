@@ -1,0 +1,15 @@
+<template>
+    <lightning-card title="Scheduled Apex Status">
+        <div class="slds-p-around_medium">
+            <p>Last Scheduled Apex Ran: {lastRunTime}</p>
+            <p>Next Scheduled Apex Run: {NextRunTime}</p>          
+            <p>Status: {jobStatus}</p>
+            <div class="slds-m-top_medium">
+                <lightning-button-group>
+                    <lightning-button label="Start Job" onclick={startJob} disabled={checkstatus}></lightning-button>
+                    <lightning-button label="Stop Job" onclick={stopJob}></lightning-button>
+                </lightning-button-group>
+            </div>
+        </div>
+    </lightning-card>
+</template>
