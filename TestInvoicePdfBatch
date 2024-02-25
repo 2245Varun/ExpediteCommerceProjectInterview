@@ -1,0 +1,94 @@
+@isTest
+private class TestInvoicePdfBatch {
+    @isTest
+    static void testBatchExecution() {
+        // Create test data: Account and Contract
+        Account acc = new Account(Name = 'TestInvoice');
+        insert acc;
+        
+        Contract newContract = new Contract(
+            AccountId = acc.Id, 
+            StartDate = Date.today(),
+            Status = 'Draft', 
+            ContractTerm = 12
+        );
+        insert newContract;
+        
+        // Update Contract status to 'Activated'
+        newContract.Status = 'Activated';
+        update newContract;       
+        
+        // Create test data: Product, PricebookEntry, and OrderItems
+        Product2 productItem = new Product2(name = 'Product test');
+        insert productItem;
+        
+        PricebookEntry standardEntryForProduct2 = new PricebookEntry(
+            Pricebook2Id = Test.getStandardPricebookId(),
+            Product2Id = productItem.Id,
+            UnitPrice = 200.00, // Adjust the unit price as needed
+            IsActive = true
+        );
+        insert standardEntryForProduct2;
+        
+        Pricebook2 standardPricebook = new Pricebook2(
+            Name = 'Standard Price Book',
+            IsActive = true
+        );
+        insert standardPricebook;
+        
+        PricebookEntry entryInStandardBook = new PricebookEntry(
+            Pricebook2Id = standardPricebook.Id,
+            Product2Id = productItem.Id,
+            UnitPrice = 1000.00
+        );
+        insert entryInStandardBook;
+        
+         List<Order> orders = new List<Order>();
+        for (Integer i = 0; i < 5; i++) {
+            orders.add(new Order(
+                Name = 'Test Order ' + i,
+                Status = 'Draft',
+                EffectiveDate = Date.today(),
+                AccountId = acc.Id,
+                ContractId = newContract.Id,
+                Pricebook2Id = standardPricebook.Id // Set the Pricebook2Id to the custom pricebook
+
+            ));
+        }
+        insert orders;
+        
+        List<OrderItem> orderlineItems = new List<OrderItem>();
+        for (Order ord : orders) {
+            for (Integer i = 0; i < 2; i++) {
+                orderlineItems.add(new OrderItem(
+                    OrderId = ord.Id,
+                    Product2Id = productItem.Id,
+                    UnitPrice = 1000.00,
+                    Quantity = 1,
+                    PricebookEntryId = entryInStandardBook.Id
+                ));
+            }
+        }
+        insert orderlineItems;
+        
+        // Update Order status to 'Activated'
+        for (Order ord : orders) {
+            ord.Status = 'Activated';
+        }
+        update orders;
+        
+        // Start the batch job
+        Test.startTest();
+        InvoicePdfBatch batchJob = new InvoicePdfBatch();
+        Database.executeBatch(batchJob);
+        Test.stopTest();
+        
+    /*   List<Messaging.SingleEmailMessage> sentEmails = [SELECT Id FROM Messaging.SingleEmailMessage];
+        System.assertEquals(1, sentEmails.size(), 'Expected 1 email to be sent');
+
+        // Verify that attachments were added to the email
+        Messaging.SingleEmailMessage email = sentEmails[0];
+        List<Messaging.EmailFileAttachment> attachments = email.getFileAttachments();
+        System.assertNotEquals(0, attachments.size(), 'Expected attachments to be added to the email');*/
+    }
+}
